@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<link rel="manifest" href="manifest.json">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lumina Bible Pro</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a2a3a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <style>
+        :root { --primary: #1a2a3a; --accent: #c0392b; --text: #2c3e50; --bg: #fdfcfb; }
+        body { font-family: -apple-system, system-ui, sans-serif; margin: 0; background: var(--bg); color: var(--text); padding-bottom: 100px; }
+        
+        /* Header */
+        header { background: var(--primary); color: white; padding: 20px; text-align: center; position: sticky; top: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .controls { display: flex; background: #eee; padding: 10px; gap: 8px; position: sticky; top: 60px; z-index: 999; }
+        select { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem; background: white; }
+
+        /* Bible Reader */
+        #bible-display { padding: 30px 20px; line-height: 1.9; font-size: 1.3rem; max-width: 800px; margin: auto; min-height: 70vh; }
+        .verse { margin-bottom: 15px; display: inline; }
+        .v-num { font-size: 0.85rem; font-weight: bold; color: var(--accent); margin-right: 6px; vertical-align: super; }
+
+        /* Bottom Menu */
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid #ddd; z-index: 1000; }
+        .nav-item { border: none; background: none; text-align: center; color: var(--primary); width: 25%; cursor: pointer; }
+        .nav-icon { font-size: 1.4rem; display: block; }
+        .nav-text { font-size: 0.65rem; font-weight: bold; text-transform: uppercase; margin-top: 4px; }
+
+        /* Overlays */
+        #drawer { position: fixed; bottom: -100%; left: 0; width: 100%; background: white; transition: 0.4s; z-index: 2000; padding: 25px; box-sizing: border-box; border-radius: 25px 25px 0 0; box-shadow: 0 -5px 25px rgba(0,0,0,0.2); }
+        #drawer.open { bottom: 0; }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; z-index: 1500; }
+        .dark-mode { --bg: #121212; --text: #e0e0e0; --primary: #000; }
+    </style>
+</head>
+<body>
+
+<header>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="white"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+    <span id="top-title">Lumina Bible</span>
+</header>
+
+<div class="controls">
+    <select id="bookSelect" onchange="loadChapters()"></select>
+    <select id="chapterSelect" onchange="fetchBibleText()"></select>
+</div>
+
+<main id="bible-display">Loading the Word...</main>
+
+<nav class="bottom-nav">
+    <button class="nav-item" onclick="speak()"> <span class="nav-icon">🔊</span><span class="nav-text">Listen</span></button>
+    <button class="nav-item" onclick="toggleDrawer()"> <span class="nav-icon">📅</span><span class="nav-text">Schedule</span></button>
+    <button class="nav-item" onclick="saveBookmark()"> <span class="nav-icon">🔖</span><span class="nav-text">Bookmark</span></button>
+    <button class="nav-item" onclick="toggleTheme()"> <span class="nav-icon">🌓</span><span class="nav-text">Theme</span></button>
+</nav>
+
+<div class="overlay" id="overlay" onclick="toggleDrawer()"></div>
+<div id="drawer">
+    <h2 style="margin-top:0">Bible Schedule</h2>
+    <p>Set daily reminder time:</p>
+    <input type="time" id="schedTime" style="width:100%; padding:15px; font-size:1.2rem; border-radius:10px; border:1px solid #ccc;">
+    <button onclick="setReminder()" style="width:100%; background:var(--primary); color:white; padding:15px; border:none; border-radius:10px; margin-top:15px; font-weight:bold;">Set Reminder</button>
+</div>
+
+<script>
+// --- FULL 66 BOOKS ---
+const bibleStructure = {
+    "Genesis":50,"Exodus":40,"Leviticus":27,"Numbers":36,"Deuteronomy":34,"Joshua":24,"Judges":21,"Ruth":4,"1 Samuel":31,"2 Samuel":24,"1 Kings":22,"2 Kings":25,"1 Chronicles":29,"2 Chronicles":36,"Ezra":10,"Nehemiah":13,"Esther":10,"Job":42,"Psalms":150,"Proverbs":31,"Ecclesiastes":12,"Song of Solomon":8,"Isaiah":66,"Jeremiah":52,"Lamentations":5,"Ezekiel":48,"Daniel":12,"Hosea":14,"Joel":3,"Amos":9,"Obadiah":1,"Jonah":4,"Micah":7,"Nahum":3,"Habakkuk":3,"Zephaniah":3,"Haggai":2,"Zechariah":14,"Malachi":4,
+    "Matthew":28,"Mark":16,"Luke":24,"John":21,"Acts":28,"Romans":16,"1 Corinthians":16,"2 Corinthians":13,"Galatians":6,"Ephesians":6,"Philippians":4,"Colossians":4,"1 Thessalonians":5,"2 Thessalonians":3,"1 Timothy":6,"2 Timothy":4,"Titus":3,"Philemon":1,"Hebrews":13,"James":5,"1 Peter":5,"2 Peter":3,"1 John":5,"2 John":1,"3 John":1,"Jude":1,"Revelation":22
+};
+
+const synth = window.speechSynthesis;
+const bookDropdown = document.getElementById('bookSelect');
+const chapDropdown = document.getElementById('chapterSelect');
+
+// --- SERVICE WORKER REGISTRATION ---
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW failed', err));
+    });
+}
+
+function init() {
+    for (let book in bibleStructure) {
+        bookDropdown.options.add(new Option(book, book));
+    }
+    // Load last saved position
+    const last = localStorage.getItem('lastReadLoc');
+    if(last) bookDropdown.value = last;
+    
+    loadChapters();
+    startScheduleChecker();
+}
+
+function loadChapters() {
+    const book = bookDropdown.value;
+    const totalChaps = bibleStructure[book];
+    chapDropdown.innerHTML = "";
+    for(let i=1; i<=totalChaps; i++) {
+        chapDropdown.options.add(new Option(`Chapter ${i}`, i));
+    }
+    fetchBibleText();
+}
+
+async function fetchBibleText() {
+    const book = bookDropdown.value;
+    const chap = chapDropdown.value;
+    document.getElementById('top-title').innerText = `${book} ${chap}`;
+    document.getElementById('bible-display').innerHTML = "Loading...";
+    
+    try {
+        const res = await fetch(`https://bible-api.com/${book}+${chap}`);
+        const data = await res.json();
+        document.getElementById('bible-display').innerHTML = data.verses.map(v => 
+            `<span class="verse"><span class="v-num">${v.verse}</span>${v.text}</span>`
+        ).join(' ');
+        window.scrollTo(0,0);
+        localStorage.setItem('lastReadLoc', book);
+    } catch(e) { document.getElementById('bible-display').innerHTML = "Offline. Please connect to internet to load new chapters."; }
+}
+
+function speak() {
+    synth.cancel();
+    const utter = new SpeechSynthesisUtterance(document.getElementById('bible-display').innerText);
+    utter.rate = 0.95;
+    synth.speak(utter);
+}
+
+function toggleDrawer() {
+    document.getElementById('drawer').classList.toggle('open');
+    document.getElementById('overlay').style.display = document.getElementById('drawer').classList.contains('open') ? 'block' : 'none';
+}
+
+function setReminder() {
+    const time = document.getElementById('schedTime').value;
+    localStorage.setItem('bibleTime', time);
+    if(Notification.permission !== "granted") Notification.requestPermission();
+    alert(`Reminder set for ${time}`);
+    toggleDrawer();
+}
+
+function startScheduleChecker() {
+    setInterval(() => {
+        const scheduled = localStorage.getItem('bibleTime');
+        const now = new Date();
+        const current = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+        if(scheduled === current) {
+            if(Notification.permission === "granted") {
+                new Notification("📖 Time for Lumina", { body: "Your daily Bible reading time is now." });
+            }
+        }
+    }, 60000);
+}
+
+function saveBookmark() {
+    const loc = `${bookDropdown.value} ${chapDropdown.value}`;
+    localStorage.setItem('bookmark', loc);
+    navigator.vibrate?.(50);
+    alert("Bookmark Saved!");
+}
+
+function toggleTheme() { document.body.classList.toggle('dark-mode'); }
+
+init();
+</script>
+</body>
+</html>
