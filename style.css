@@ -1,0 +1,175 @@
+/* --- Root Variables for easy Theme Switching --- */
+:root {
+    --primary-color: #1a2a3a;
+    --accent-color: #c0392b;
+    --bg-color: #fdfcfb;
+    --card-bg: #ffffff;
+    --text-main: #2c3e50;
+    --text-muted: #7f8c8d;
+    --nav-height: 70px;
+    --header-height: 60px;
+}
+
+/* --- Dark Mode Variables --- */
+body.dark-mode {
+    --bg-color: #121212;
+    --card-bg: #1e1e1e;
+    --text-main: #e0e0e0;
+    --text-muted: #a0a0a0;
+    --primary-color: #000000;
+}
+
+/* --- Base Styles --- */
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    line-height: 1.6;
+    padding-bottom: calc(var(--nav-height) + 20px);
+    transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* --- Header & Fixed Navigation --- */
+header {
+    background: var(--primary-color);
+    color: white;
+    height: var(--header-height);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.2rem;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.controls {
+    display: flex;
+    background: var(--card-bg);
+    padding: 12px;
+    gap: 10px;
+    position: sticky;
+    top: var(--header-height);
+    z-index: 999;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+select {
+    flex: 1;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    font-size: 1rem;
+    background: var(--card-bg);
+    color: var(--text-main);
+    appearance: none; /* Modern look */
+}
+
+/* --- Bible Content (The Reader) --- */
+#bible-display {
+    padding: 25px 20px;
+    max-width: 700px;
+    margin: 0 auto;
+    font-size: 1.25rem;
+    animation: fadeIn 0.5s ease;
+}
+
+.verse {
+    display: block;
+    margin-bottom: 18px;
+}
+
+.v-num {
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: var(--accent-color);
+    margin-right: 10px;
+    display: inline-block;
+    width: 25px;
+    text-align: right;
+}
+
+/* --- Mobile Bottom Tab Bar --- */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    height: var(--nav-height);
+    background: var(--card-bg);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    border-top: 1px solid rgba(0,0,0,0.1);
+    z-index: 1000;
+    padding-bottom: env(safe-area-inset-bottom); /* For iPhone Notch */
+}
+
+.nav-item {
+    background: none;
+    border: none;
+    color: var(--text-main);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    transition: transform 0.1s active;
+}
+
+.nav-item:active {
+    transform: scale(0.9);
+}
+
+.nav-icon {
+    font-size: 1.5rem;
+}
+
+.nav-text {
+    font-size: 0.65rem;
+    font-weight: 600;
+    margin-top: 4px;
+    color: var(--text-muted);
+}
+
+/* --- Settings Drawer --- */
+#drawer {
+    position: fixed;
+    bottom: -100%;
+    left: 0;
+    width: 100%;
+    background: var(--card-bg);
+    border-radius: 25px 25px 0 0;
+    padding: 30px 25px;
+    z-index: 2001;
+    transition: bottom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+    box-shadow: 0 -10px 30px rgba(0,0,0,0.2);
+}
+
+#drawer.open {
+    bottom: 0;
+}
+
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(4px);
+    display: none;
+    z-index: 2000;
+}
+
+/* --- Animations --- */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
