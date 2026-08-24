@@ -1,10 +1,9 @@
-const CACHE_NAME = 'lumina-v1';
-const assets = ['index.html', 'manifest.json'];
-
-self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(assets)));
-});
-
-self.addEventListener('fetch', (e) => {
-  e.respondWith(caches.match(e.request).then((res) => res || fetch(e.request)));
-});
+"name": "Lumina Bible Pro",
+  "short_name": "Lumina",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1a2a3a",
+  "theme_color": "#1a2a3a",
+  "scope": "/"
+}
